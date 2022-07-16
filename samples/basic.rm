@@ -1,0 +1,6 @@
+fn my_fn(argument, list){
+	let var_inside_function : int = 123;
+}
+
+let declaration : string = "this is a global constant declaration";
+let number : int = 123123;
