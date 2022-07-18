@@ -140,7 +140,7 @@ void build_fn(LLVMModuleRef module, LLVMBuilderRef builder, LLVMContextRef conte
 	consume(TOKEN_LEFT_PAREN, "expected '('");
 
 	int arg_count = 0;
-	LLVMTypeRef fn_args_type[256] = {};
+	LLVMTypeRef fn_args_type[256] = {0};
 
 	while (parser.current.type != TOKEN_RIGHT_PAREN)
 	{
@@ -177,6 +177,39 @@ void build_fn(LLVMModuleRef module, LLVMBuilderRef builder, LLVMContextRef conte
 	// consume(TOKEN_RIGHT_BRACE, "expected '}'");
 }
 
+void build_fn_call(LLVMModuleRef module, LLVMBuilderRef builder, LLVMContextRef context, char *name)
+{
+	printf("name :: %s\n", name);
+	int arg_count = 0;
+	LLVMValueRef fn_args_type[256] = {0};
+
+	while (parser.current.type != TOKEN_RIGHT_PAREN)
+	{
+		consume(TOKEN_IDENTIFIER, "expected argument name");
+		char *arg_name = malloc(parser.previous.length * sizeof(char));
+		sprintf(arg_name, "%.*s", parser.previous.length, parser.previous.start);
+		if (!match(TOKEN_COMMA))
+		{
+			break;
+		}
+
+		fn_args_type[arg_count] = LLVMConstInt(LLVMInt8Type(), 12238974, false);
+		arg_count++;
+	}
+
+	printf("arg_count :: %d\n", arg_count);
+	LLVMValueRef fn = LLVMGetNamedFunction(module, name);
+	if (!fn)
+	{
+		printf("error :: no function found with '%s'\n", name);
+		exit(0);
+	}
+	LLVMBuildCall(builder, fn, fn_args_type, arg_count, "ret_val");
+
+	consume(TOKEN_RIGHT_PAREN, "expected ')' 2");
+	consume(TOKEN_SEMICOLON, "expected end of statement");
+}
+
 // BUILDERS END
 
 void declaration(LLVMModuleRef module, LLVMBuilderRef builder, LLVMContextRef context)
@@ -185,9 +218,18 @@ void declaration(LLVMModuleRef module, LLVMBuilderRef builder, LLVMContextRef co
 	{
 		build_var(module, builder, context);
 	}
-	if (match(TOKEN_FN))
+	else if (match(TOKEN_FN))
 	{
 		build_fn(module, builder, context);
+	}
+	else if (match(TOKEN_IDENTIFIER))
+	{
+		char *var = malloc(sizeof(char) * parser.previous.length);
+		sprintf(var, "%.*s", parser.previous.length, parser.previous.start);
+		if (match(TOKEN_LEFT_PAREN))
+		{
+			build_fn_call(module, builder, context, var);
+		}
 	}
 }
 
